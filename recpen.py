@@ -2,10 +2,8 @@ import pyautogui
 import win32api
 import keyboard
 import time
+import json
 from config import INTERVAL, SCALE, WAIT, START, STOP, FSTOP
-
-
-recorder = []
 
 
 def click() -> bool:
@@ -19,6 +17,7 @@ def _force_stop() -> None:
 
 
 def recpen() -> None:
+    recorder = []
     print(f"Press '{START}' to start recording and '{STOP}' to end recording.")
     while True:  # Await starting command
         _force_stop()
@@ -39,6 +38,15 @@ def recpen() -> None:
         time.sleep(INTERVAL)
     e = time.time()
     print(f"Recorded {len(recorder)} activities in {e - s:.2f} seconds.")
+
+    # Filtering uneventful moments for recording to replay at current mouse position
+    start_index = 0
+    for moment in recorder:
+        if moment[1]:
+            break
+        start_index += 1
+
+    recorder = recorder[start_index:]
 
     print(f"Press '{START}' and wait {WAIT:.2f} seconds to start replaying.")
     while True:  # Await starting command
@@ -77,6 +85,23 @@ def recpen() -> None:
 
     print(f"Replaying complete in {e - s:.2f} seconds.")
 
+    print("Save recording? (y/n)")
+    save = input("")
+    if save == 'y':
+        name = input("Recording name: ")
+        json_data = {
+            'name': name,
+            'int': INTERVAL,
+            'scale': SCALE,
+            'run': recorder
+        }
+
+        json_data = json.dumps(json_data, indent=4)
+
+        with open(f"save/{name}.json", 'w') as record_data:
+            record_data.write(json_data)
+
+        print(f"Recording saved as {name}.json")
+
 
 recpen()
-#
